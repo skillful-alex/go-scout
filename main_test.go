@@ -28,15 +28,25 @@ type YamlFile []struct {
 
 type TestCase struct {
 	Script    string
-	PreState  []byte
+	PreState  [32]byte
 	Block     []byte
-	PostState []byte
+	PostState [32]byte
 }
 
 func readHex(t *testing.T, hexString string) []byte {
 	result, err := hex.DecodeString(hexString)
 	if err != nil {
 		t.Fatalf("can't read hex string: %v err: %v", hexString, err)
+	}
+	return result
+}
+
+func readHex32(t *testing.T, hexString string) [32]byte {
+	slice := readHex(t, hexString)
+	var result [32]byte
+	n := copy(result[:], slice)
+	if n != 32 {
+		t.Fatalf("can't read 32 bytes. n = %v", n)
 	}
 	return result
 }
@@ -53,9 +63,9 @@ func readYaml(t *testing.T, yamlFileName string) []TestCase {
 
 	var testCases []TestCase
 	for _, yamlTestCase := range yamlFile {
-		preState := readHex(t, yamlTestCase.Test.PreState)
+		preState := readHex32(t, yamlTestCase.Test.PreState)
 		block := readHex(t, yamlTestCase.Test.Block)
-		postState := readHex(t, yamlTestCase.Test.PostState)
+		postState := readHex32(t, yamlTestCase.Test.PostState)
 		testCases = append(testCases, TestCase{
 			Script:    yamlTestCase.Test.Script,
 			PreState:  preState,
