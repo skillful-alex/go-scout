@@ -3,13 +3,11 @@
 ## Smallest wasm file size
 The `docker run --rm -v $(pwd):/src tinygo/tinygo:0.8.0 tinygo build -gc=none -panic=trap -no-debug -o /src/out/transition-smallest.wasm /src/transition.go` result is 731 bytes.
 
-But if you wont use **append** function, then you must remove `-gc=none` tinygo arg    
-`docker run --rm -v $(pwd):/src tinygo/tinygo:0.8.0 tinygo build -panic=trap -no-debug -o /src/out/transition-gc.wasm /src/transition.go` and have result size 3149 bytes.
+But if you use the **append** function, you must remove `-gc=none` tinygo arg `docker run --rm -v $(pwd):/src tinygo/tinygo:0.8.0 tinygo build -panic=trap -no-debug -o /src/out/transition-gc.wasm /src/transition.go` and then the size will be 3149 bytes.
 
-for get wat and c file used next command from https://github.com/WebAssembly/wabt :
+To get wat and c files, use the following command from https://github.com/WebAssembly/wabt :
 
 ```bash
-export PATH=$PATH:$HOME/wabt/out/
 cd out
 
 wasm2c   transition-smallest.wasm                  -o transition-smallest.c
