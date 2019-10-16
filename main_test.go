@@ -5,14 +5,23 @@ import (
 	"encoding/hex"
 	"io/ioutil"
 	"testing"
+	"flag"
+	"path"
+	"os"
 
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
 
-func init() {
-	//TODO remove logLevel set
-	logrus.SetLevel(logrus.TraceLevel)
+const testsPath = "tests"
+
+type testCase struct {
+	Script    []byte
+	PreState  [32]byte
+	Block     []byte
+	PostState [32]byte
+	Deposits  string
+	Exception string
 }
 
 type YamlFile []struct {
@@ -21,16 +30,16 @@ type YamlFile []struct {
 		PreState  string `yaml:"pre_state"`
 		Block     string `yaml:"block"`
 		PostState string `yaml:"post_state"`
-		Deposits  string `yaml:"deposits"`  //TODO
-		Exception string `yaml:"exception"` //TODO
+		Deposits  string `yaml:"deposits"`
+		Exception string `yaml:"exception"`
 	} `yaml:"test"`
 }
 
-type TestCase struct {
-	Script    string
-	PreState  [32]byte
-	Block     []byte
-	PostState [32]byte
+func init() {
+	//TODO remove set of logLevel (or not include the _test to prod build)
+	if flag.Lookup("test.v") != nil {
+		logrus.SetLevel(logrus.TraceLevel)
+    }
 }
 
 func readHex(t *testing.T, hexString string) []byte {
@@ -51,7 +60,20 @@ func readHex32(t *testing.T, hexString string) [32]byte {
 	return result
 }
 
-func readYaml(t *testing.T, yamlFileName string) []TestCase {
+func readScript(t *testing.T, fileNameOrHex string) []byte {
+	fileName := path.Join(testsPath, fileNameOrHex)
+	if _, err := os.Stat(fileName); !os.IsNotExist(err) {
+		wasm, err := ioutil.ReadFile(fileName)
+		if err != nil {
+			t.Fatalf("can't read file. %v", err)
+		}
+		return wasm
+	} else {
+		return readHex(t, fileNameOrHex)
+	}
+}
+
+func readYaml(t *testing.T, yamlFileName string) []testCase {
 	yamlBytes, err := ioutil.ReadFile(yamlFileName)
 	if err != nil {
 		t.Fatalf("can't read the %v: %v", yamlFileName, err)
@@ -61,16 +83,15 @@ func readYaml(t *testing.T, yamlFileName string) []TestCase {
 		t.Fatalf("can't unmarshal the %v: %v", yamlFileName, err)
 	}
 
-	var testCases []TestCase
+	var testCases []testCase
 	for _, yamlTestCase := range yamlFile {
-		preState := readHex32(t, yamlTestCase.Test.PreState)
-		block := readHex(t, yamlTestCase.Test.Block)
-		postState := readHex32(t, yamlTestCase.Test.PostState)
-		testCases = append(testCases, TestCase{
-			Script:    yamlTestCase.Test.Script,
-			PreState:  preState,
-			Block:     block,
-			PostState: postState,
+		testCases = append(testCases, testCase{
+			Script:    readScript(t, yamlTestCase.Test.Script),
+			PreState:  readHex32(t, yamlTestCase.Test.PreState),
+			Block:     readHex(t, yamlTestCase.Test.Block),
+			PostState: readHex32(t, yamlTestCase.Test.PostState),
+			Deposits:  yamlTestCase.Test.Deposits,
+			Exception: yamlTestCase.Test.Exception,
 		})
 	}
 
@@ -78,17 +99,17 @@ func readYaml(t *testing.T, yamlFileName string) []TestCase {
 }
 
 func TestExecuteCode(t *testing.T) {
-	testCases := readYaml(t, "./test.yaml")
+	testCases := readYaml(t, path.Join(testsPath, "_tests.yaml"))
 	for _, test := range testCases {
-		wasm, err := ioutil.ReadFile(test.Script)
-		if err != nil {
-			t.Fatalf("can't read file %v", err)
+		postState, deposits, err := ExecuteCode(test.Script, test.PreState, test.Block)
+		if err != nil && err.Error() != test.Exception {
+			//TODO impliment Exception test
+			t.Errorf("ExecuteCode error: %v", err)
 		}
-		postState, deposits, err := ExecuteCode(wasm, test.PreState, test.Block)
 		if !bytes.Equal(postState[:], test.PostState[:]) {
 			t.Errorf("ExecuteCode incorrect result.\nwait:   %v\nresult: %v", test.PostState, postState)
 		}
-		if deposits != nil {
+		if deposits != nil || test.Deposits != "" {
 			panic("TODO impliment deposits test")
 		}
 	}

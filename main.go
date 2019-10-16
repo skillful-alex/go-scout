@@ -27,12 +27,12 @@ func ExecuteCode(execCode []byte, preState [32]byte, blockData []byte) (postStat
 	}
 	defer instance.Close()
 
-	main := instance.Exports["main"]
-	if main == nil {
-		log.Warnf("main function not exported. All exports: %v", instance.Exports)
-		return preState, nil, errors.New("main function not exported")
+	exec := instance.Exports["_Z4execPc"]
+	if exec == nil {
+		log.Warnf("exec function not exported. All exports: %v", instance.Exports)
+		return preState, nil, errors.New("exec function not exported")
 	}
-	result, err := main()
+	result, err := exec(preState)
 
 	if err != nil {
 		log.WithError(err).Error("error executing instance")
