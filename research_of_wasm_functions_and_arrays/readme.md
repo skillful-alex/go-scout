@@ -1,8 +1,8 @@
 ## Research of the transition function signature
 
-transition.c          - defines the transition function to compile in wasm
-test.js               - script for test/execution wasm
-out/transition.wasm   - compilation result
+* transition.c          - defines the transition function to compile in wasm
+* test.js               - script for test/execution wasm
+* out/transition.wasm   - compilation result
 
 Compilation c to wasm:
 ```bash
@@ -12,9 +12,9 @@ docker run --rm -v $(pwd):/src trzeci/emscripten  \
    -s EXPORTED_FUNCTIONS='["_transition"]'        \
    -s MALLOC="emmalloc"
 ```
-wasm size: 258 bytes
-The only import is memory.
-The only export is "_transition" function.
+* Wasm size: 258 bytes.
+* The only import is memory.
+* The only export is "transition" function.
 
 Test:
 ```bash
