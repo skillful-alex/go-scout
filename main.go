@@ -9,8 +9,12 @@ import (
 
 var log = logrus.WithField("prefix", "ewasm")
 
-//Deposit TODO define type
-type Deposit struct{}
+//Deposit define type returned
+type Deposit struct {
+	PubKey                [48]byte
+	WithdrawalCredentials [48]byte
+	Amount                uint64
+}
 
 //ExecuteCode executes wasm code in the ethereum environment
 func ExecuteCode(execCode []byte, preState [32]byte, blockData []byte) (postState [32]byte, deposits []Deposit, error error) {
