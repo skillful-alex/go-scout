@@ -2,6 +2,7 @@ package ewasm
 
 import (
 	"errors"
+	"fmt"
 
 	logrus "github.com/sirupsen/logrus"
 	wasm "github.com/wasmerio/go-ext-wasm/wasmer"
@@ -9,42 +10,34 @@ import (
 
 var log = logrus.WithField("prefix", "ewasm")
 
-//Deposit define type returned
-type Deposit struct {
-	PubKey                [48]byte
-	WithdrawalCredentials [48]byte
-	Amount                uint64
-}
-
 //ExecuteCode executes wasm code in the ethereum environment
 func ExecuteCode(execCode []byte, preState [32]byte, blockData []byte) (postState [32]byte, deposits []Deposit, error error) {
-	imports, err := getImports()
-	if err != nil {
-		log.WithError(err).Error("imports error")
-		return preState, nil, err
-	}
-
-	instance, err := wasm.NewInstanceWithImports(execCode, imports)
+	instance, err := wasm.NewInstance(execCode)
 	if err != nil {
 		log.WithError(err).Error("error creating instance")
 		return preState, nil, err
 	}
 	defer instance.Close()
 
-	exec := instance.Exports["_Z4execPc"]
-	if exec == nil {
-		log.Warnf("exec function not exported. All exports: %v", instance.Exports)
-		return preState, nil, errors.New("exec function not exported")
+	transition := instance.Exports["transition"]
+	if transition == nil {
+		log.Warnf("transition function not exported. All exports: %v", instance.Exports)
+		return preState, nil, errors.New("transition function not exported")
 	}
-	result, err := exec(preState)
+	if err = initMemory(instance.Memory, preState, blockData); err != nil {
+		return preState, nil, err
+	}
 
+	result, err := transition(0)
 	if err != nil {
 		log.WithError(err).Error("error executing instance")
 		return preState, nil, err
 	}
+	if result.ToI32() != 0 {
+		errStr := fmt.Sprintf("wasm return error code %v", result)
+		log.Infof(errStr)
+		return preState, nil, errors.New(errStr)
+	}
 
-	log.WithField("result", result).Debug("executing instance")
-
-	//TODO Get post_state_root and deposits
-	return preState, nil, nil
+	return readMemory(instance.Memory)
 }

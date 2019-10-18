@@ -27,17 +27,13 @@ typedef struct {            //       sum size:
 // The result of the program is passed to postState and deposits_t pointed by args_t.deposits.  
 // On execution error, the main() should return a number other than 0.
 
-int transition() {
-  // arguments are passed at the beginning of the heap
-  args_t* args = 0;
+int transition(args_t* args) {
   deposits_t* deposits = (*args).deposits;
 
   // Nothing to do
   if ((*args).blockSize==0) {
     return 1; // error
   }
-
-  //return (int)deposits;
 
   // Put deposits
   if ((*args).blockSize==1) {
