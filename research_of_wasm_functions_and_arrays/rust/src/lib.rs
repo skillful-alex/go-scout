@@ -1,17 +1,13 @@
-#include <stdint.h>
+struct deposit{
+    pubKey: [i8;48],
+    withdrawalCredentials: [i8;48],
+    amount: u64,
+}
 
-//deposit_t is struct for save single deposit
-typedef struct {                       // sum size:
-    int8_t pubKey[48];                 //   48
-    int8_t withdrawalCredentials[48];  //   96
-    uint64_t amount;                   //  104
-} deposit_t;
-
-//deposit_t is array of deposits
-typedef struct {
-  uint32_t   count;       // real amount of deposits
-  deposit_t* deposits;    // array of deposits
-} deposits_t;
+struct deposits {
+    count: u32,
+    deposits []!!!
+}
 
 typedef struct {            //       sum size:
   uint8_t preState[32];     // (in)  32
@@ -27,7 +23,9 @@ typedef struct {            //       sum size:
 // The result of the program is passed to postState and deposits_t pointed by args_t.deposits.  
 // On execution error, the main() should return a number other than 0.
 
-int transition(args_t* args) {
+#[cfg(not(test))]
+#[no_mangle]
+pub extern "C" fn transition(args_t* args) -> i32 {
   deposits_t* deposits = (*args).deposits;
 
   // Nothing to do

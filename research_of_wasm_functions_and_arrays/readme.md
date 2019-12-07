@@ -65,6 +65,13 @@ Result, wasm doesn't import anything. Export:
 * function int transition()
 
 
+### Compilation wasm from rust:
+
+```bash
+	cd scripts/helloworld && cargo build --release && chisel run --config chisel.toml
+```
+
+
 ### Test:
 ```bash
 node test.js out/transition_erased.wasm

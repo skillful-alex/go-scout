@@ -33,7 +33,7 @@ func readMemory(memory *wasm.Memory) ([32]byte, []Deposit, error) {
 
 	deposits := make([]Deposit, depositsCount)
 	for i := 0; i < depositsCount; i++ {
-		depositPtr := depositsPtr + 8 /*TODO why 8?*/ + i*(48+48+8)
+		depositPtr := depositsPtr + 4 + i*(48+48+8)
 		copyArray(deposits[i].PubKey[:], 0, heap, depositPtr, 48)
 		copyArray(deposits[i].WithdrawalCredentials[:], 0, heap, depositPtr+48, 48)
 		deposits[i].Amount = helperGetNum(heap, depositPtr+96, 8)

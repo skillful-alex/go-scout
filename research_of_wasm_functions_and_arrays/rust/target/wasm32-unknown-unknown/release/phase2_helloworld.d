@@ -1,0 +1,1 @@
+/home/alex/go/src/github.com/skillful-alex/go-scout/research_of_wasm_functions_and_arrays/rust/target/wasm32-unknown-unknown/release/phase2_helloworld.wasm: /home/alex/go/src/github.com/skillful-alex/go-scout/research_of_wasm_functions_and_arrays/rust/src/lib.rs
